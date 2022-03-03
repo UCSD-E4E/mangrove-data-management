@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 import win32api
 import win32file
 import tkinter
@@ -9,6 +9,7 @@ import pickle
 from tkinter import messagebox
 from glob import glob
 import shutil
+import wmi
 
 def has_files(drive: str):
     return os.path.exists(os.path.join(drive, 'DCIM'))
@@ -17,21 +18,27 @@ def get_removable_drives():
     return [d for d in win32api.GetLogicalDriveStrings().split('\x00')[:-1] if win32file.GetDriveType(d) == win32file.DRIVE_REMOVABLE and has_files(d)]
 
 def get_fixed_drives():
-    return [d for d in win32api.GetLogicalDriveStrings().split('\x00')[:-1] if win32file.GetDriveType(d) == win32file.DRIVE_FIXED]
+    c = wmi.WMI()
+    logical_disk2partition_query = c.query('SELECT * FROM Win32_LogicalDiskToPartition')
+    logical_disk2partition_map = {l2p.Antecedent.DeviceID:l2p.Dependent for l2p in logical_disk2partition_query}
+    disk_drive2disk_partition_query = c.query('SELECT * FROM Win32_DiskDriveToDiskPartition')
 
-def add_source_drive_dropdown(root: tkinter.Tk, row: int, default=None):
-    removable_drives = get_removable_drives()
+    partitions = [d2p.Dependent for d2p in disk_drive2disk_partition_query if d2p.Antecedent.MediaType == 'External hard disk media']
+    logical_disks = [F'{logical_disk2partition_map[p.DeviceID].DeviceID}\\' for p in partitions if p.DeviceID in logical_disk2partition_map]
+    
+    return ['Desktop'] + logical_disks
 
-    label = tkinter.Label(root, text='Source Drive')
+def add_dropdown(root: tkinter.Tk, label: str, row: int, data: List[str], default=None):
+    label = tkinter.Label(root, text=label)
     label.grid(row=row, column=0)
 
     variable = tkinter.StringVar()
-    if default and default in removable_drives:
+    if default and default in data:
         variable.set(default)
-    elif removable_drives:
-        variable.set(removable_drives[0])
+    elif data:
+        variable.set(data[0])
 
-    dropdown = tkinter.OptionMenu(root, variable, *removable_drives)
+    dropdown = tkinter.OptionMenu(root, variable, *data)
     dropdown.grid(row=row, column=1)
 
     return label, dropdown, variable
@@ -60,6 +67,16 @@ def add_date(root: tkinter.Tk, label: str, row: int, default=None):
 
     return label, date
 
+def add_checkbox(root: tkinter.Tk, label: str, row:int, default=None):
+    variable = tkinter.BooleanVar()
+    if default:
+        variable.set(default)
+
+    checkbox = tkinter.Checkbutton(root, text=label,variable=variable, onvalue=True, offvalue=False)
+    checkbox.grid(row=row, column=0)
+
+    return checkbox, variable
+
 def create_directories(path: str):
     path_obj = pathlib.Path(path)
     if not os.path.exists(path_obj.absolute()):
@@ -83,8 +100,12 @@ def load_config() -> Dict[str, Any]:
     return {}
 
 def copy(config: Dict[str, Any]):
+    base_target_path = config['target_drive']
+    if base_target_path == 'Desktop':
+        base_target_path = os.path.expanduser('~/Desktop')
+
     copy_path = os.path.join(
-        os.path.expanduser('~/Desktop'),
+        base_target_path,
         F"{config['country']}_{config['region']}",
         F"{config['date'].strftime('%Y-%m-%d')}",
         config['site'],
@@ -92,7 +113,7 @@ def copy(config: Dict[str, Any]):
     copy_path = create_directories(copy_path)
 
     source_files = glob(os.path.join(
-        F"{config['drive']}",
+        config['source_drive'],
         'DCIM',
         '**/*'
     ))
@@ -100,6 +121,12 @@ def copy(config: Dict[str, Any]):
     for file in source_files:
         file_name = os.path.basename(file)
         shutil.copyfile(file, os.path.join(copy_path, file_name))
+
+    if config['delete_files']:
+        shutil.rmtree(os.path.join(
+            config['source_drive'],
+            'DCIM'
+        ))
 
     messagebox.showinfo(title='Copy completed', message='Copy completed')
 
@@ -120,26 +147,34 @@ def main():
 
     config = load_config()
 
-    drive_label, drive_dropdown, drive_variable = add_source_drive_dropdown(root, 0, default=get_value_or_default(config, 'drive'))
-    country_label, country_entry = add_entry(root, 'Country', 1, default=get_value_or_default(config, 'country'))
-    region_label, region_entry = add_entry(root, 'Region', 2, default=get_value_or_default(config, 'region'))
-    date_label, date_entry = add_date(root, 'Flight Date', 3)
-    site_label, site_entry = add_entry(root, 'Site', 4)
-    flight_label, flight_entry = add_entry(root, 'Flight', 5)
+    source_drive_label, source_drive_dropdown, source_drive_variable = add_dropdown(root, 'Source Drive', 0, removable_drives, default=get_value_or_default(config, 'source_drive'))
+    target_drive_label, target_drive_dropdown, target_drive_variable = add_dropdown(root, 'Target Drive', 1, get_fixed_drives(), default=get_value_or_default(config, 'target_drive'))
+    country_label, country_entry = add_entry(root, 'Country', 2, default=get_value_or_default(config, 'country'))
+    region_label, region_entry = add_entry(root, 'Region', 3, default=get_value_or_default(config, 'region'))
+    date_label, date_entry = add_date(root, 'Flight Date', 4)
+    site_label, site_entry = add_entry(root, 'Site', 5)
+    flight_label, flight_entry = add_entry(root, 'Flight', 6)
+    delete_checkbox, delete_variable = add_checkbox(root, 'Delete Files', 7, default=get_value_or_default(config, 'delete_files'))
 
     def copy_command():
-        config['drive'] = drive_variable.get()
+        config['source_drive'] = source_drive_variable.get()
+        config['target_drive'] = target_drive_variable.get()
         config['country'] = fix_input(country_entry.get())
         config['region'] = fix_input(region_entry.get())
         config['date'] = date_entry.get_date()
         config['site'] = fix_input(site_entry.get())
         config['flight'] = fix_input(flight_entry.get())
+        config['delete_files'] = delete_variable.get()
+
+        if not config['country'] or not config['region'] or not config['date'] or not config['site'] or not config['flight']:
+            messagebox.showerror(title='Missing data', message='Please ensure all fields have been filled out and try again.')
+            return
 
         save_config(config)
         copy(config)
 
     copy_button = tkinter.Button(root, text='Copy', command=copy_command)
-    copy_button.grid(row=6, column=1)
+    copy_button.grid(row=8, column=1)
 
     root.mainloop()
 

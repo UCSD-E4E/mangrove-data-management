@@ -8,6 +8,7 @@ authors = ["Your Name <you@example.com>"]
 python = "^3.10"
 pywin32 = "^303"
 tkcalendar = "^1.6.1"
+WMI = "^1.5.1"
 
 [tool.poetry.dev-dependencies]
 

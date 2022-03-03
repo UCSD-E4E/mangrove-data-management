@@ -36,10 +36,28 @@ python-versions = "*"
 [package.dependencies]
 babel = "*"
 
+[[package]]
+name = "wmi"
+version = "1.5.1"
+description = "Windows Management Instrumentation"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+pywin32 = "*"
+
+[package.extras]
+all = ["pytest", "wheel", "twine", "sphinx"]
+dev = ["pytest", "sphinx", "wheel", "twine"]
+docs = ["sphinx"]
+package = ["wheel", "twine"]
+tests = ["pytest"]
+
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "6172df5cfc51e0c60a9562e640abaecdc78238a5ee2e1642c72b2e0f5d89260a"
+content-hash = "316494e038ae7abe923027c9b19cf71be70149f9ff7c6df6276addcefa3a95a9"
 
 [metadata.files]
 babel = [
@@ -68,4 +86,8 @@ tkcalendar = [
     {file = "tkcalendar-1.6.1-py3-none-any.whl", hash = "sha256:9d3a80816a7b32d64fab696fa3d2a007fb23c87953267d5e343a38ff4cd7c15c"},
     {file = "tkcalendar-1.6.1-py3.8.egg", hash = "sha256:c3ac34ab268734377ce73407893e8a5765e288aecbbb55136fb3ccea98006a96"},
     {file = "tkcalendar-1.6.1.tar.gz", hash = "sha256:5edf958c0a59429e90309e9b805b2e229192bbcab952460247204d7030eea5cf"},
+]
+wmi = [
+    {file = "WMI-1.5.1-py2.py3-none-any.whl", hash = "sha256:1d6b085e5c445141c475476000b661f60fff1aaa19f76bf82b7abb92e0ff4942"},
+    {file = "WMI-1.5.1.tar.gz", hash = "sha256:b6a6be5711b1b6c8d55bda7a8befd75c48c12b770b9d227d31c1737dbf0d40a6"},
 ]
