@@ -31,6 +31,7 @@ def get_fixed_drives():
 def add_dropdown(root: tkinter.Tk, label: str, row: int, data: List[str], default=None):
     label = tkinter.Label(root, text=label)
     label.grid(row=row, column=0)
+    label.config(bg='black', fg='white')
 
     variable = tkinter.StringVar()
     if default and default in data:
@@ -40,15 +41,18 @@ def add_dropdown(root: tkinter.Tk, label: str, row: int, data: List[str], defaul
 
     dropdown = tkinter.OptionMenu(root, variable, *data)
     dropdown.grid(row=row, column=1)
+    dropdown.config(bg='black', fg='white')
 
     return label, dropdown, variable
 
 def add_entry(root: tkinter.Tk, label: str, row: int, default=None):
     label = tkinter.Label(root, text=label)
     label.grid(row=row, column=0)
+    label.config(bg='black', fg='white')
 
     entry = tkinter.Entry(root)
     entry.grid(row=row, column=1)
+    entry.config(bg='black', fg='white')
 
     if default:
         entry.insert(0, default)
@@ -58,6 +62,7 @@ def add_entry(root: tkinter.Tk, label: str, row: int, default=None):
 def add_date(root: tkinter.Tk, label: str, row: int, default=None):
     label = tkinter.Label(root, text=label)
     label.grid(row=row, column=0)
+    label.config(bg='black', fg='white')
 
     date = tkcalendar.DateEntry(root, selectmode='day')
     date.grid(row=row, column=1)
@@ -74,6 +79,7 @@ def add_checkbox(root: tkinter.Tk, label: str, row:int, default=None):
 
     checkbox = tkinter.Checkbutton(root, text=label,variable=variable, onvalue=True, offvalue=False)
     checkbox.grid(row=row, column=0)
+    checkbox.config(bg='black', fg='white')
 
     return checkbox, variable
 
@@ -144,6 +150,7 @@ def main():
 
     root = tkinter.Tk()
     root.title('Data Organizer')
+    root.config(bg='black')
 
     config = load_config()
 
@@ -175,6 +182,7 @@ def main():
 
     copy_button = tkinter.Button(root, text='Copy', command=copy_command)
     copy_button.grid(row=8, column=1)
+    copy_button.config(bg='black', fg='white')
 
     root.mainloop()
 
