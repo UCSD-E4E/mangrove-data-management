@@ -10,6 +10,7 @@ from tkinter import messagebox
 from glob import glob
 import shutil
 import wmi
+from caf import Caffine
 
 def has_files(drive: str):
     return os.path.exists(os.path.join(drive, 'DCIM'))
@@ -106,6 +107,9 @@ def load_config() -> Dict[str, Any]:
     return {}
 
 def copy(config: Dict[str, Any]):
+    caf = Caffine()
+    request_id = caf.request()
+
     base_target_path = config['target_drive']
     if base_target_path == 'Desktop':
         base_target_path = os.path.expanduser('~/Desktop')
@@ -134,6 +138,7 @@ def copy(config: Dict[str, Any]):
             'DCIM'
         ))
 
+    caf.release(request_id)
     messagebox.showinfo(title='Copy completed', message='Copy completed')
 
 def get_value_or_default(config: Dict[str, Any], key: str, default=None):
