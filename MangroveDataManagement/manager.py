@@ -10,7 +10,9 @@ from tkinter import messagebox
 from glob import glob
 import shutil
 import wmi
-from caf import Caffine
+from .caf import Caffine
+from shutil import which
+from subprocess import Popen
 
 def has_files(drive: str):
     return os.path.exists(os.path.join(drive, 'DCIM'))
@@ -24,10 +26,10 @@ def get_fixed_drives():
     logical_disk2partition_map = {l2p.Antecedent.DeviceID:l2p.Dependent for l2p in logical_disk2partition_query}
     disk_drive2disk_partition_query = c.query('SELECT * FROM Win32_DiskDriveToDiskPartition')
 
-    partitions = [d2p.Dependent for d2p in disk_drive2disk_partition_query if d2p.Antecedent.MediaType == 'External hard disk media']
-    logical_disks = [F'{logical_disk2partition_map[p.DeviceID].DeviceID}\\' for p in partitions if p.DeviceID in logical_disk2partition_map]
+    disk_drive2disk_partition_filter = [(d2p.Antecedent, d2p.Dependent) for d2p in disk_drive2disk_partition_query if d2p.Antecedent.MediaType == 'External hard disk media']
+    logical_disks = [F'{logical_disk2partition_map[p.DeviceID].DeviceID}\\ ({d.Model})' for d, p in disk_drive2disk_partition_filter if p.DeviceID in logical_disk2partition_map]
     
-    return ['Desktop'] + logical_disks
+    return [F'Desktop ({os.path.join(os.path.expanduser("~"), "Desktop")})'] + logical_disks
 
 def add_dropdown(root: tkinter.Tk, label: str, row: int, data: List[str], default=None):
     label = tkinter.Label(root, text=label)
@@ -110,7 +112,7 @@ def copy(config: Dict[str, Any]):
     caf = Caffine()
     request_id = caf.request()
 
-    base_target_path = config['target_drive']
+    base_target_path, _ = config['target_drive'].split(' ')
     if base_target_path == 'Desktop':
         base_target_path = os.path.expanduser('~/Desktop')
 
@@ -139,7 +141,10 @@ def copy(config: Dict[str, Any]):
         ))
 
     caf.release(request_id)
-    messagebox.showinfo(title='Copy completed', message='Copy completed')
+
+    # Launch explorer.
+    file_path = which('explorer')
+    Popen([file_path, copy_path])
 
 def get_value_or_default(config: Dict[str, Any], key: str, default=None):
     return config[key] if key in config else default
@@ -148,6 +153,7 @@ def fix_input(input: str):
     return input.lower().replace(' ', '-')
 
 def main():
+    # Only run if a removable drive is attached.
     removable_drives = get_removable_drives()
     if not removable_drives:
         messagebox.showerror(title='No removable drives attached', message='Check that your SD card is plugged in and try again.')
