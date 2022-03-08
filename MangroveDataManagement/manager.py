@@ -14,6 +14,10 @@ from .caf import Caffine
 from shutil import which
 from subprocess import Popen
 
+FONT_NAME = 'Segoe UI'
+FONT_SIZE = 18
+FONT = (FONT_NAME, FONT_SIZE)
+
 def has_files(drive: str):
     return os.path.exists(os.path.join(drive, 'DCIM'))
 
@@ -34,7 +38,7 @@ def get_fixed_drives():
 def add_dropdown(root: tkinter.Tk, label: str, row: int, data: List[str], default=None):
     label = tkinter.Label(root, text=label)
     label.grid(row=row, column=0)
-    label.config(bg='black', fg='white')
+    label.config(bg='black', fg='white', font=FONT)
 
     variable = tkinter.StringVar()
     if default and default in data:
@@ -43,19 +47,19 @@ def add_dropdown(root: tkinter.Tk, label: str, row: int, data: List[str], defaul
         variable.set(data[0])
 
     dropdown = tkinter.OptionMenu(root, variable, *data)
-    dropdown.grid(row=row, column=1)
-    dropdown.config(bg='black', fg='white')
+    dropdown.grid(row=row, column=1, sticky='we', pady=(10, 10))
+    dropdown.config(bg='black', fg='white', font=FONT)
 
     return label, dropdown, variable
 
 def add_entry(root: tkinter.Tk, label: str, row: int, default=None):
     label = tkinter.Label(root, text=label)
     label.grid(row=row, column=0)
-    label.config(bg='black', fg='white')
+    label.config(bg='black', fg='white', font=FONT)
 
     entry = tkinter.Entry(root)
-    entry.grid(row=row, column=1)
-    entry.config(bg='black', fg='white')
+    entry.grid(row=row, column=1, sticky='we', pady=(10, 10))
+    entry.config(bg='black', fg='white', font=FONT)
 
     if default:
         entry.insert(0, default)
@@ -65,10 +69,11 @@ def add_entry(root: tkinter.Tk, label: str, row: int, default=None):
 def add_date(root: tkinter.Tk, label: str, row: int, default=None):
     label = tkinter.Label(root, text=label)
     label.grid(row=row, column=0)
-    label.config(bg='black', fg='white')
+    label.config(bg='black', fg='white', font=FONT)
 
     date = tkcalendar.DateEntry(root, selectmode='day')
-    date.grid(row=row, column=1)
+    date.grid(row=row, column=1, sticky='we', pady=(10, 10))
+    date.config(font=FONT)
 
     if default:
         date.set_date(default)
@@ -81,8 +86,8 @@ def add_checkbox(root: tkinter.Tk, label: str, row:int, default=None):
         variable.set(default)
 
     checkbox = tkinter.Checkbutton(root, text=label,variable=variable, onvalue=True, offvalue=False)
-    checkbox.grid(row=row, column=0)
-    checkbox.config(bg='black', fg='white')
+    checkbox.grid(row=row, column=0, pady=(10, 10))
+    checkbox.config(bg='black', fg='white', selectcolor='black', activebackground='black', activeforeground='white', font=FONT)
 
     return checkbox, variable
 
@@ -151,6 +156,7 @@ def copy(config: Dict[str, Any]):
             config['source_drive'],
             'DCIM'
         )
+
         try:
             shutil.rmtree(folder_to_delete)
         except OSError:
@@ -182,6 +188,7 @@ def main():
     root = tkinter.Tk()
     root.title('Data Organizer')
     root.config(bg='black')
+    root.grid_columnconfigure(1, weight=1)
 
     config = load_config()
 
@@ -212,8 +219,8 @@ def main():
         copy(config)
 
     copy_button = tkinter.Button(root, text='Copy', command=copy_command)
-    copy_button.grid(row=8, column=1)
-    copy_button.config(bg='black', fg='white')
+    copy_button.grid(row=8, column=1, pady=(10, 10))
+    copy_button.config(bg='black', fg='white', font=FONT)
 
     root.mainloop()
 
