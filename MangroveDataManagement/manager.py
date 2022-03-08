@@ -130,15 +130,35 @@ def copy(config: Dict[str, Any]):
         '**/*'
     ))
 
+    target_files = [os.path.join(copy_path, os.path.basename(f)) for f in source_files]
+    existing_target_files = [f for f in target_files if os.path.exists(f)]
+
+    if existing_target_files:
+        messagebox.showerror(
+            title='This process would overwrite some files.',
+            message='This process cannot overwrite files.  Please manually remove the files from the target folder.')
+        file_path = which('explorer')
+        Popen([file_path, copy_path])
+        caf.release(request_id)
+        return
+
     for file in source_files:
         file_name = os.path.basename(file)
         shutil.copyfile(file, os.path.join(copy_path, file_name))
 
     if config['delete_files']:
-        shutil.rmtree(os.path.join(
+        folder_to_delete = os.path.join(
             config['source_drive'],
             'DCIM'
-        ))
+        )
+        try:
+            shutil.rmtree(folder_to_delete)
+        except OSError:
+            messagebox.showerror(
+                title='An error has occurred while trying to delete the DCIM folder.',
+                message='Please delete the DCIM folder manually')
+            file_path = which('explorer')
+            Popen([file_path, folder_to_delete])
 
     caf.release(request_id)
 
