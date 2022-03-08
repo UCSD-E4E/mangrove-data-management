@@ -2,6 +2,7 @@ from typing import Any, Dict, List
 import win32api
 import win32file
 import tkinter
+import tkinter.ttk
 import tkcalendar
 import os
 import pathlib
@@ -13,6 +14,8 @@ import wmi
 from .caf import Caffine
 from shutil import which
 from subprocess import Popen
+import time
+import math
 
 FONT_NAME = 'Segoe UI'
 FONT_SIZE = 18
@@ -59,7 +62,7 @@ def add_entry(root: tkinter.Tk, label: str, row: int, default=None):
 
     entry = tkinter.Entry(root)
     entry.grid(row=row, column=1, sticky='we', pady=(10, 10))
-    entry.config(bg='black', fg='white', font=FONT)
+    entry.config(bg='black', fg='white', insertbackground='white', font=FONT)
 
     if default:
         entry.insert(0, default)
@@ -113,9 +116,20 @@ def load_config() -> Dict[str, Any]:
     
     return {}
 
-def copy(config: Dict[str, Any]):
+def copy(root: tkinter.Tk, config: Dict[str, Any]):
     caf = Caffine()
     request_id = caf.request()
+
+    progress_win = tkinter.Toplevel()
+    progress_win.geometry('500x100')
+    progress_win.config(bg='black')
+
+    progress = tkinter.ttk.Progressbar(progress_win)
+    progress.pack(fill='x', ipady=10, expand=True)
+
+    remaining_time = tkinter.Label(progress_win)
+    remaining_time.pack(fill='x')
+    remaining_time.config(bg='black', fg='white', font=FONT)
 
     base_target_path, _ = config['target_drive'].split(' ')
     if base_target_path == 'Desktop':
@@ -135,6 +149,8 @@ def copy(config: Dict[str, Any]):
         '**/*'
     ))
 
+    progress.config(length=len(source_files))
+
     target_files = [os.path.join(copy_path, os.path.basename(f)) for f in source_files]
     existing_target_files = [f for f in target_files if os.path.exists(f)]
 
@@ -147,9 +163,18 @@ def copy(config: Dict[str, Any]):
         caf.release(request_id)
         return
 
-    for file in source_files:
+    start = time.perf_counter()
+    for i, file in enumerate(source_files):
         file_name = os.path.basename(file)
         shutil.copyfile(file, os.path.join(copy_path, file_name))
+        elapsed = time.perf_counter() - start
+        time_per_item = elapsed / (float(i) + 1.0)
+        total_time = time_per_item * len(source_files)
+        time_remaining = total_time - time_per_item
+        minutes_remaing = math.floor(time_remaining / 60)
+        seconds_remaining = time_remaining - minutes_remaing * 60
+        progress['value'] = (float(i) + 1.0) * 100.0 / float(len(source_files))
+        remaining_time.config(text=F'{minutes_remaing}:{round(seconds_remaining * 1000) / 1000} remaining')
 
     if config['delete_files']:
         folder_to_delete = os.path.join(
@@ -167,6 +192,7 @@ def copy(config: Dict[str, Any]):
             Popen([file_path, folder_to_delete])
 
     caf.release(request_id)
+    progress_win.destroy()
 
     # Launch explorer.
     file_path = which('explorer')
@@ -216,7 +242,7 @@ def main():
             return
 
         save_config(config)
-        copy(config)
+        copy(root, config)
 
     copy_button = tkinter.Button(root, text='Copy', command=copy_command)
     copy_button.grid(row=8, column=1, pady=(10, 10))
