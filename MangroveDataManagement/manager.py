@@ -13,8 +13,8 @@ from subprocess import Popen
 import time
 import math
 
-from .caf import Caffine
 from .main_window import MainWindow
+from .copy_manager import CopyManager
 
 def has_files(drive: str):
     return os.path.exists(os.path.join(drive, 'DCIM'))
@@ -56,9 +56,6 @@ def load_config() -> Dict[str, Any]:
     return {}
 
 def copy(config: Dict[str, Any]):
-    caf = Caffine()
-    request_id = caf.request()
-
     # progress_win = tkinter.Toplevel()
     # progress_win.geometry('500x100')
     # progress_win.config(bg='black')
@@ -82,25 +79,14 @@ def copy(config: Dict[str, Any]):
         config['flight'])
     copy_path = create_directories(copy_path)
 
-    source_files = glob(os.path.join(
-        config['source_drive'],
-        'DCIM',
-        '**/*'
-    ))
+    copy_manager = CopyManager(
+        os.path.join(
+            config['source_drive'],
+            'DCIM'),
+        copy_path)
+    copy_manager.copy_files()
 
     # progress.config(length=len(source_files))
-
-    target_files = [os.path.join(copy_path, os.path.basename(f)) for f in source_files]
-    existing_target_files = [f for f in target_files if os.path.exists(f)]
-
-    if existing_target_files:
-        messagebox.showerror(
-            title='This process would overwrite some files.',
-            message='This process cannot overwrite files.  Please manually remove the files from the target folder.')
-        file_path = which('explorer')
-        Popen([file_path, copy_path])
-        caf.release(request_id)
-        return
 
     # start = time.perf_counter()
     # for i, file in enumerate(source_files):
@@ -114,6 +100,9 @@ def copy(config: Dict[str, Any]):
     #     seconds_remaining = time_remaining - minutes_remaing * 60
         # progress['value'] = (float(i) + 1.0) * 100.0 / float(len(source_files))
         # remaining_time.config(text=F'{minutes_remaing}:{round(seconds_remaining * 1000) / 1000} remaining')
+
+    if not copy_manager.validate_files():
+        messagebox.showerror(title='An error during copy occurred.', message='One or more files failed the checksum check.')
 
     if config['delete_files']:
         folder_to_delete = os.path.join(
@@ -130,7 +119,6 @@ def copy(config: Dict[str, Any]):
             file_path = which('explorer')
             Popen([file_path, folder_to_delete])
 
-    caf.release(request_id)
     # progress_win.destroy()
 
     # Launch explorer.
