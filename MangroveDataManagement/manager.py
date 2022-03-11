@@ -220,12 +220,13 @@ def main():
 
     source_drive_label, source_drive_dropdown, source_drive_variable = add_dropdown(root, 'Source Drive', 0, removable_drives, default=get_value_or_default(config, 'source_drive'))
     target_drive_label, target_drive_dropdown, target_drive_variable = add_dropdown(root, 'Target Drive', 1, get_fixed_drives(), default=get_value_or_default(config, 'target_drive'))
-    country_label, country_entry = add_entry(root, 'Country', 2, default=get_value_or_default(config, 'country'))
-    region_label, region_entry = add_entry(root, 'Region', 3, default=get_value_or_default(config, 'region'))
-    date_label, date_entry = add_date(root, 'Flight Date', 4)
-    site_label, site_entry = add_entry(root, 'Site', 5)
-    flight_label, flight_entry = add_entry(root, 'Flight', 6)
-    delete_checkbox, delete_variable = add_checkbox(root, 'Delete Files', 7, default=get_value_or_default(config, 'delete_files'))
+    aircraft_label, aircraft_entry = add_entry(root, 'Aircraft', 2, default=get_value_or_default(config, 'aircraft'))
+    country_label, country_entry = add_entry(root, 'Country', 3, default=get_value_or_default(config, 'country'))
+    region_label, region_entry = add_entry(root, 'Region', 4, default=get_value_or_default(config, 'region'))
+    date_label, date_entry = add_date(root, 'Flight Date', 5)
+    site_label, site_entry = add_entry(root, 'Site', 6)
+    flight_label, flight_entry = add_entry(root, 'Flight', 7)
+    delete_checkbox, delete_variable = add_checkbox(root, 'Delete Files', 8, default=get_value_or_default(config, 'delete_files', default=True))
 
     def copy_command():
         config['source_drive'] = source_drive_variable.get()
@@ -235,9 +236,10 @@ def main():
         config['date'] = date_entry.get_date()
         config['site'] = fix_input(site_entry.get())
         config['flight'] = fix_input(flight_entry.get())
+        config['aircraft'] = aircraft_entry.get()
         config['delete_files'] = delete_variable.get()
 
-        if not config['country'] or not config['region'] or not config['date'] or not config['site'] or not config['flight']:
+        if not config['aircraft'] or not config['country'] or not config['region'] or not config['date'] or not config['site'] or not config['flight']:
             messagebox.showerror(title='Missing data', message='Please ensure all fields have been filled out and try again.')
             return
 
@@ -245,7 +247,7 @@ def main():
         copy(root, config)
 
     copy_button = tkinter.Button(root, text='Copy', command=copy_command)
-    copy_button.grid(row=8, column=1, pady=(10, 10))
+    copy_button.grid(row=9, column=1, pady=(10, 10))
     copy_button.config(bg='black', fg='white', font=FONT)
 
     root.mainloop()
