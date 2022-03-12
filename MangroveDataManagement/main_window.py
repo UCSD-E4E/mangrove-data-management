@@ -24,11 +24,13 @@ class MainWindow(Tk):
         _, self._date_entry = self._add_date('Flight Date', 5)
         _, self._site_entry = self._add_entry('Site', 6)
         _, self._flight_entry = self._add_entry('Flight', 7)
-        _, self._delete_variable = self._add_checkbox('Delete Files', 8, default=self._get_value_or_default(config, 'delete_files', default=True))
         
         copy_button = Button(self, text='Copy', command=self._copy_command)
         copy_button.grid(row=9, column=1, pady=(10, 10))
         copy_button.config(bg='black', fg='white', font=FONT)
+
+    def _get_value_or_default(self, config: Dict[str, Any], key: str, default=None):
+        return config[key] if key in config else default
 
     def _fix_input(self, input: str):
         return input.lower().replace(' ', '-')
@@ -42,7 +44,6 @@ class MainWindow(Tk):
         self._config['date'] = self._date_entry.get_date()
         self._config['site'] = self._fix_input(self._site_entry.get())
         self._config['flight'] = self._fix_input(self._flight_entry.get())
-        self._config['delete_files'] = self._delete_variable.get()
 
         if not self._config['aircraft'] or not self._config['country'] or not self._config['region'] or not self._config['date'] or not self._config['site'] or not self._config['flight']:
             messagebox.showerror(title='Missing data', message='Please ensure all fields have been filled out and try again.')
