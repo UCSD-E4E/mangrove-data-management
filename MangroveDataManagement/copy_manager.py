@@ -58,9 +58,9 @@ class CopyManager:
             self._source,
             '**/*'
         ))
-        target_files = [os.path.join(self._target, os.path.basename(f)) for f in source_files]
+        file_set = [(f, os.path.join(self._target, os.path.basename(f))) for f in source_files]
 
-        result = all(self._validate_file(s, t,) for s, t in zip(source_files, target_files))
+        result = all(self._validate_file(s, t,) for s, t in file_set)
         self._caf.release(request_id)
 
         return result

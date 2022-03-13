@@ -1,43 +1,26 @@
 from typing import Any, Dict, List
-import win32api
-import win32file
 import os
 import pathlib
 import pickle
 from tkinter import messagebox
 from glob import glob
 import shutil
-import wmi
 from shutil import which
 from subprocess import Popen
 import json
+import argparse
 
 from .main_window import MainWindow
 from .copy_manager import CopyManager
+from .drive_manager import MockDriveManager, PhysicalDriveManager
+from .utils import create_directories
 
-def has_files(drive: str):
-    return os.path.exists(os.path.join(drive, 'DCIM'))
-
-def get_removable_drives():
-    return [d for d in win32api.GetLogicalDriveStrings().split('\x00')[:-1] if win32file.GetDriveType(d) == win32file.DRIVE_REMOVABLE and has_files(d)]
-
-def get_fixed_drives():
-    c = wmi.WMI()
-    logical_disk2partition_query = c.query('SELECT * FROM Win32_LogicalDiskToPartition')
-    logical_disk2partition_map = {l2p.Antecedent.DeviceID:l2p.Dependent for l2p in logical_disk2partition_query}
-    disk_drive2disk_partition_query = c.query('SELECT * FROM Win32_DiskDriveToDiskPartition')
-
-    disk_drive2disk_partition_filter = [(d2p.Antecedent, d2p.Dependent) for d2p in disk_drive2disk_partition_query if d2p.Antecedent.MediaType == 'External hard disk media']
-    logical_disks = [F'{logical_disk2partition_map[p.DeviceID].DeviceID}\\ ({d.Model})' for d, p in disk_drive2disk_partition_filter if p.DeviceID in logical_disk2partition_map]
-    
-    return [F'Desktop ({os.path.join(os.path.expanduser("~"), "Desktop")})'] + logical_disks
-
-def create_directories(path: str):
-    path_obj = pathlib.Path(path)
-    if not os.path.exists(path_obj.absolute()):
-        path_obj.mkdir(parents=True)
-
-    return path_obj.absolute()
+def write_metadata(config: Dict[str, Any], path: str):
+    with open(os.path.join(
+        path,
+        'metadata.json'
+    ), 'w') as f:
+        json.dump(config, f, default=str, indent=4, sort_keys=True)
 
 def get_config_path():
     config_path = create_directories(os.path.expandvars('%APPDATA%/E4E/Mangroves'))
@@ -84,12 +67,7 @@ def copy(config: Dict[str, Any]):
             'DCIM'),
         copy_path)
     copy_manager.copy_files()
-
-    with open(os.path.join(
-        copy_path,
-        'metadata.json'
-    ), 'w') as f:
-        json.dump(config, f, default=str)
+    write_metadata(copy_path)
 
     # progress.config(length=len(source_files))
 
@@ -124,12 +102,7 @@ def copy(config: Dict[str, Any]):
         config['source_drive'],
         'DCIM'
     ), target_dcim)
-
-    with open(os.path.join(
-        target_dcim,
-        'metadata.json'
-    ), 'w') as f:
-        json.dump(config, f, default=str)
+    write_metadata(config, target_dcim)
 
     # progress_win.destroy()
 
@@ -138,10 +111,23 @@ def copy(config: Dict[str, Any]):
     Popen([file_path, copy_path])
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", "--mock", action="store_true")
+    args = parser.parse_args()
+    if args.mock:
+        drive_manager = MockDriveManager()
+    else:
+        drive_manager = PhysicalDriveManager()
+
     # Only run if a removable drive is attached.
-    removable_drives = get_removable_drives()
+    removable_drives = drive_manager.get_removable_drives()
     if not removable_drives:
         messagebox.showerror(title='No removable drives attached', message='Check that your SD card is plugged in and try again.')
+        return
+
+    fixed_drives = drive_manager.get_fixed_drives()
+    if not fixed_drives:
+        messagebox.showerror(title='No fixed drives attached', message='Check that your portable HDD is plugged in and try again.')
         return
 
     config = load_config()
@@ -150,7 +136,7 @@ def main():
         save_config(config)
         copy(config)
     
-    root = MainWindow(config, removable_drives, get_fixed_drives(), copy_callback)
+    root = MainWindow(config, removable_drives, fixed_drives, copy_callback)
     root.mainloop()
 
 if __name__ == '__main__':
