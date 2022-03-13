@@ -10,8 +10,7 @@ import shutil
 import wmi
 from shutil import which
 from subprocess import Popen
-import time
-import math
+import json
 
 from .main_window import MainWindow
 from .copy_manager import CopyManager
@@ -86,6 +85,12 @@ def copy(config: Dict[str, Any]):
         copy_path)
     copy_manager.copy_files()
 
+    with open(os.path.join(
+        copy_path,
+        'metadata.json'
+    ), 'w') as f:
+        json.dump(config, f, default=str)
+
     # progress.config(length=len(source_files))
 
     # start = time.perf_counter()
@@ -103,19 +108,28 @@ def copy(config: Dict[str, Any]):
 
     if not copy_manager.validate_files():
         messagebox.showerror(title='An error during copy occurred.', message='One or more files failed the checksum check.')
+        return
 
     sd_card_path = os.path.join(
         config['source_drive'],
         F"{config['country']}_{config['region']}",
         F"{config['date'].strftime('%Y-%m-%d')}",
-        config['site'])
+        config['site'],
+        config['flight'])
     create_directories(sd_card_path)
+    target_dcim = os.path.join(
+        sd_card_path,
+        'DCIM')
     shutil.move(os.path.join(
         config['source_drive'],
         'DCIM'
-    ), os.path.join(
-        sd_card_path,
-        config['flight']))
+    ), target_dcim)
+
+    with open(os.path.join(
+        target_dcim,
+        'metadata.json'
+    ), 'w') as f:
+        json.dump(config, f, default=str)
 
     # progress_win.destroy()
 
