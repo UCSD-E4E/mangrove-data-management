@@ -104,20 +104,18 @@ def copy(config: Dict[str, Any]):
     if not copy_manager.validate_files():
         messagebox.showerror(title='An error during copy occurred.', message='One or more files failed the checksum check.')
 
-    # if config['delete_files']:
-    #     folder_to_delete = os.path.join(
-    #         config['source_drive'],
-    #         'DCIM'
-    #     )
-
-    #     try:
-    #         shutil.rmtree(folder_to_delete)
-    #     except OSError:
-    #         messagebox.showerror(
-    #             title='An error has occurred while trying to delete the DCIM folder.',
-    #             message='Please delete the DCIM folder manually')
-    #         file_path = which('explorer')
-    #         Popen([file_path, folder_to_delete])
+    sd_card_path = os.path.join(
+        config['source_drive'],
+        F"{config['country']}_{config['region']}",
+        F"{config['date'].strftime('%Y-%m-%d')}",
+        config['site'])
+    create_directories(sd_card_path)
+    shutil.move(os.path.join(
+        config['source_drive'],
+        'DCIM'
+    ), os.path.join(
+        sd_card_path,
+        config['flight']))
 
     # progress_win.destroy()
 
@@ -136,7 +134,7 @@ def main():
 
     def copy_callback(config):
         save_config(config)
-        copy(root, config)
+        copy(config)
     
     root = MainWindow(config, removable_drives, get_fixed_drives(), copy_callback)
     root.mainloop()

@@ -22,7 +22,7 @@ class MainWindow(Tk):
         _, self._country_entry = self._add_entry('Country', 3, default=self._get_value_or_default(config, 'country'))
         _, self._region_entry = self._add_entry('Region', 4, default=self._get_value_or_default(config, 'region'))
         _, self._date_entry = self._add_date('Flight Date', 5)
-        _, self._site_entry = self._add_entry('Site', 6)
+        _, self._site_entry = self._add_entry('Site', 6, default=self._get_value_or_default(config, 'site'))
         _, self._flight_entry = self._add_entry('Flight', 7)
         
         copy_button = Button(self, text='Copy', command=self._copy_command)
