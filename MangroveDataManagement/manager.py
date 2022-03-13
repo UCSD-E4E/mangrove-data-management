@@ -1,3 +1,5 @@
+from queue import Empty
+from time import sleep
 from typing import Any, Dict, List
 import os
 import pathlib
@@ -9,6 +11,12 @@ from shutil import which
 from subprocess import Popen
 import json
 import argparse
+from multiprocessing import Process, Queue
+import tkinter
+
+FONT_NAME = 'Segoe UI'
+FONT_SIZE = 18
+FONT = (FONT_NAME, FONT_SIZE)
 
 from .main_window import MainWindow
 from .copy_manager import CopyManager
@@ -37,17 +45,9 @@ def load_config() -> Dict[str, Any]:
     
     return {}
 
-def copy(config: Dict[str, Any]):
-    # progress_win = tkinter.Toplevel()
-    # progress_win.geometry('500x100')
-    # progress_win.config(bg='black')
-
-    # progress = tkinter.ttk.Progressbar(progress_win)
-    # progress.pack(fill='x', ipady=10, expand=True)
-
-    # remaining_time = tkinter.Label(progress_win)
-    # remaining_time.pack(fill='x')
-    # remaining_time.config(bg='black', fg='white', font=FONT)
+def copy(config: Dict[str, Any], message_queue: Queue):
+    def update_progress_callback(percent: float, minutes: int, seconds: float, message: str):
+        message_queue.put((percent, minutes, seconds, message))
 
     base_target_path, _ = config['target_drive'].split(' ')
     if base_target_path == 'Desktop':
@@ -66,10 +66,9 @@ def copy(config: Dict[str, Any]):
             config['source_drive'],
             'DCIM'),
         copy_path)
-    copy_manager.copy_files()
-    write_metadata(copy_path)
-
-    # progress.config(length=len(source_files))
+    if not copy_manager.copy_files(lambda p, m, s: update_progress_callback(p, m, s, 'Copying files')):
+        return
+    write_metadata(config, copy_path)
 
     # start = time.perf_counter()
     # for i, file in enumerate(source_files):
@@ -81,10 +80,8 @@ def copy(config: Dict[str, Any]):
     #     time_remaining = total_time - time_per_item
     #     minutes_remaing = math.floor(time_remaining / 60)
     #     seconds_remaining = time_remaining - minutes_remaing * 60
-        # progress['value'] = (float(i) + 1.0) * 100.0 / float(len(source_files))
-        # remaining_time.config(text=F'{minutes_remaing}:{round(seconds_remaining * 1000) / 1000} remaining')
 
-    if not copy_manager.validate_files():
+    if not copy_manager.validate_files(lambda p, m, s: update_progress_callback(p, m, s, 'Validating files')):
         messagebox.showerror(title='An error during copy occurred.', message='One or more files failed the checksum check.')
         return
 
@@ -104,7 +101,7 @@ def copy(config: Dict[str, Any]):
     ), target_dcim)
     write_metadata(config, target_dcim)
 
-    # progress_win.destroy()
+    message_queue.put(-1)
 
     # Launch explorer.
     file_path = which('explorer')
@@ -133,8 +130,41 @@ def main():
     config = load_config()
 
     def copy_callback(config):
+        progress_win = tkinter.Toplevel()
+        progress_win.geometry('500x100')
+        progress_win.config(bg='black')
+
+        progress = tkinter.ttk.Progressbar(progress_win)
+        progress.pack(fill='x', ipady=10, ipadx=10, expand=True)
+        progress.config(length=100)
+
+        message_label = tkinter.Label(progress_win)
+        message_label.pack(fill='x')
+        message_label.config(bg='black', fg='white', font=FONT)
+
+        remaining_time = tkinter.Label(progress_win)
+        remaining_time.pack(fill='x')
+        remaining_time.config(bg='black', fg='white', font=FONT)
+
+        message_queue = Queue()
         save_config(config)
-        copy(config)
+        process = Process(target=copy, args=(config, message_queue))
+        process.start()
+
+        while message_queue:
+            try:
+                message = message_queue.get(block=False)
+
+                if message == -1:
+                    progress_win.destroy()
+                    break
+
+                percent, minutes_remaing, seconds_remaining, message_str = message
+                message_label.config(text=message_str)
+                progress['value'] = round(percent * 100)
+                remaining_time.config(text=F'{minutes_remaing}:{round(seconds_remaining * 1000) / 1000} remaining')
+            except Empty:
+                root.update()
     
     root = MainWindow(config, removable_drives, fixed_drives, copy_callback)
     root.mainloop()
