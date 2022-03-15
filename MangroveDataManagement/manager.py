@@ -49,7 +49,8 @@ def copy(config: Dict[str, Any], message_queue: Queue):
     def update_progress_callback(percent: float, minutes: int, seconds: float, message: str):
         message_queue.put((percent, minutes, seconds, message))
 
-    base_target_path, _ = config['target_drive'].split(' ')
+    base_target_path, _ = config['target_drive'].split('(')
+    base_target_path = base_target_path.strip()
     if base_target_path == 'Desktop':
         base_target_path = os.path.expanduser('~/Desktop')
 

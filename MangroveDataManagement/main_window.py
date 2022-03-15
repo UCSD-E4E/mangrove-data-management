@@ -6,13 +6,15 @@ FONT_NAME = 'Segoe UI'
 FONT_SIZE = 18
 FONT = (FONT_NAME, FONT_SIZE)
 
+VERSION = "1.2"
+
 class MainWindow(Tk):
     def __init__(self, config: Dict[str, Any], removable_drives: List[str], fixed_drives: List[str], copy_clicked_callback: Callable[[Dict[str, Any]], None]):
         Tk.__init__(self)
         self._config = config
         self._copy_clicked_callback = copy_clicked_callback
 
-        self.title('Data Organizer')
+        self.title(F'Data Organizer ({VERSION})')
         self.config(bg='black')
         self.grid_columnconfigure(1, weight=1)
 
