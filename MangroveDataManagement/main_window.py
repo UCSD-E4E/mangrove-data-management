@@ -6,7 +6,7 @@ FONT_NAME = 'Segoe UI'
 FONT_SIZE = 18
 FONT = (FONT_NAME, FONT_SIZE)
 
-VERSION = "1.2"
+VERSION = "1.3"
 
 class MainWindow(Tk):
     def __init__(self, config: Dict[str, Any], removable_drives: List[str], fixed_drives: List[str], copy_clicked_callback: Callable[[Dict[str, Any]], None]):
@@ -27,9 +27,9 @@ class MainWindow(Tk):
         _, self._site_entry = self._add_entry('Site', 6, default=self._get_value_or_default(config, 'site'))
         _, self._flight_entry = self._add_entry('Flight', 7)
         
-        copy_button = Button(self, text='Copy', command=self._copy_command)
-        copy_button.grid(row=9, column=1, pady=(10, 10))
-        copy_button.config(bg='black', fg='white', font=FONT)
+        self._copy_button = Button(self, text='Copy', command=self._copy_command)
+        self._copy_button.grid(row=9, column=1, pady=(10, 10))
+        self._copy_button.config(bg='black', fg='white', font=FONT)
 
     def _get_value_or_default(self, config: Dict[str, Any], key: str, default=None):
         return config[key] if key in config else default
@@ -51,7 +51,13 @@ class MainWindow(Tk):
             messagebox.showerror(title='Missing data', message='Please ensure all fields have been filled out and try again.')
             return
 
-        self._copy_clicked_callback(self._config)
+        self._copy_clicked_callback(self, self._config)
+
+    def disable_copy(self):
+        self._copy_button["state"] = "disabled"
+
+    def enable_copy(self):
+        self._copy_button["state"] = "normal"
 
     def get_value_or_default(self, config: Dict[str, Any], key: str, default=None):
         return config[key] if key in config else default

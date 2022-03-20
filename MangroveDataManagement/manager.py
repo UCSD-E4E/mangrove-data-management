@@ -130,7 +130,9 @@ def main():
 
     config = load_config()
 
-    def copy_callback(config):
+    def copy_callback(root: MainWindow, config):
+        root.disable_copy()
+
         progress_win = tkinter.Toplevel()
         progress_win.geometry('500x100')
         progress_win.config(bg='black')
@@ -158,6 +160,7 @@ def main():
 
                 if message == -1:
                     progress_win.destroy()
+                    root.enable_copy()
                     break
 
                 percent, minutes_remaing, seconds_remaining, message_str = message
