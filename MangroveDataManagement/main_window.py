@@ -20,12 +20,12 @@ class MainWindow(Tk):
 
         _, _, self._source_drive_variable = self._add_dropdown('Source Drive', 0, removable_drives, default=self._get_value_or_default(config, 'source_drive'))
         _, _, self._target_drive_variable = self._add_dropdown('Target Drive', 1, fixed_drives, default=self._get_value_or_default(config, 'target_drive'))
-        _, self._aircraft_entry = self._add_entry('Aircraft', 2, default=self._get_value_or_default(config, 'aircraft'))
+        _, self._aircraft_entry = self._add_entry('System', 2, default=self._get_value_or_default(config, 'system'))
         _, self._country_entry = self._add_entry('Country', 3, default=self._get_value_or_default(config, 'country'))
         _, self._region_entry = self._add_entry('Region', 4, default=self._get_value_or_default(config, 'region'))
-        _, self._date_entry = self._add_date('Flight Date', 5)
+        _, self._date_entry = self._add_date('Mission Date', 5)
         _, self._site_entry = self._add_entry('Site', 6, default=self._get_value_or_default(config, 'site'))
-        _, self._flight_entry = self._add_entry('Flight', 7)
+        _, self._flight_entry = self._add_entry('Mission', 7)
         
         self._copy_button = Button(self, text='Copy', command=self._copy_command)
         self._copy_button.grid(row=9, column=1, pady=(10, 10))
@@ -38,16 +38,16 @@ class MainWindow(Tk):
         return input.lower().replace(' ', '-')
 
     def _copy_command(self):
-        self._config['source_drive'] = self._source_drive_variable.get()
+        self._config['source_drive'] = self._source_drive_variable.get().split()[0]
         self._config['target_drive'] = self._target_drive_variable.get()
-        self._config['aircraft'] = self._aircraft_entry.get()
+        self._config['system'] = self._aircraft_entry.get()
         self._config['country'] = self._fix_input(self._country_entry.get())
         self._config['region'] = self._fix_input(self._region_entry.get())
         self._config['date'] = self._date_entry.get_date()
         self._config['site'] = self._fix_input(self._site_entry.get())
-        self._config['flight'] = self._fix_input(self._flight_entry.get())
+        self._config['mission'] = self._fix_input(self._flight_entry.get())
 
-        if not self._config['aircraft'] or not self._config['country'] or not self._config['region'] or not self._config['date'] or not self._config['site'] or not self._config['flight']:
+        if not self._config['system'] or not self._config['country'] or not self._config['region'] or not self._config['date'] or not self._config['site'] or not self._config['mission']:
             messagebox.showerror(title='Missing data', message='Please ensure all fields have been filled out and try again.')
             return
 

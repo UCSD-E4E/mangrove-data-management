@@ -28,7 +28,8 @@ class PhysicalDriveManager(DriveManager):
         return os.path.exists(os.path.join(drive, 'DCIM'))
 
     def get_removable_drives(self):
-        return [d for d in win32api.GetLogicalDriveStrings().split('\x00')[:-1] if win32file.GetDriveType(d) == win32file.DRIVE_REMOVABLE and self._has_files(d)]
+        # return [d for d in win32api.GetLogicalDriveStrings().split('\x00')[:-1] if win32file.GetDriveType(d) == win32file.DRIVE_REMOVABLE and self._has_files(d)]
+        return self.get_fixed_drives()
 
     def get_fixed_drives(self):
         c = wmi.WMI()

@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import shutil
 import hashlib
 import time
@@ -22,10 +23,10 @@ class CopyManager:
 
         source_files = glob(os.path.join(
             self._source,
-            '**/*'
-        ))
+            '**', '*'
+        ), recursive=True)
 
-        target_files = [os.path.join(self._target, os.path.basename(f)) for f in source_files]
+        target_files = [os.path.join(self._target, os.path.relpath(f, self._source)) for f in source_files]
         existing_target_files = [f for f in target_files if os.path.exists(f)]
 
         if existing_target_files:
@@ -41,8 +42,10 @@ class CopyManager:
 
         start = time.perf_counter()
         for i, file in enumerate(source_files):
-            file_name = os.path.basename(file)
-            shutil.copyfile(file, os.path.join(self._target, file_name))
+            file_name = os.path.relpath(file, self._source)
+            if os.path.isfile(file):
+                Path(self._target, file_name).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(file, os.path.join(self._target, file_name))
 
             elapsed = time.perf_counter() - start
             time_per_item = elapsed / (float(i) + 1.0)
@@ -58,15 +61,18 @@ class CopyManager:
         return True
 
     def _validate_file(self, source_file, target_file):
-        with open(source_file, 'rb') as f:
-            source_data = f.read()
-            source_checksum = hashlib.md5(source_data).hexdigest()
+        if os.path.isfile(source_file):
+            with open(source_file, 'rb') as f:
+                source_data = f.read()
+                source_checksum = hashlib.md5(source_data).hexdigest()
 
-        with open(target_file, 'rb') as f:
-            target_data = f.read()
-            target_checksum = hashlib.md5(target_data).hexdigest()
+            with open(target_file, 'rb') as f:
+                target_data = f.read()
+                target_checksum = hashlib.md5(target_data).hexdigest()
 
-        return source_checksum == target_checksum
+            return source_checksum == target_checksum
+        else:
+            return True
 
     def validate_files(self, callback: Callable[[float, int, float], None]):
         request_id = self._caf.request()
@@ -75,7 +81,7 @@ class CopyManager:
             self._source,
             '**/*'
         ))
-        file_set = [(f, os.path.join(self._target, os.path.basename(f))) for f in source_files]
+        file_set = [(f, os.path.join(self._target, os.path.relpath(f, self._source))) for f in source_files]
 
         total_count = len(source_files)
 

@@ -5,11 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Module",
+            "name": "Mock Debug",
             "type": "python",
             "request": "launch",
             "module": "MangroveDataManagement.manager",
             "args": ["--mock"]
+        },
+        {
+            "name": "Live Debug",
+            "type": "python",
+            "request": "launch",
+            "module": "MangroveDataManagement.manager"
         }
+
     ]
 }

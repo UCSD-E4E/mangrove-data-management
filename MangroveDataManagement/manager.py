@@ -59,13 +59,12 @@ def copy(config: Dict[str, Any], message_queue: Queue):
         F"{config['country']}_{config['region']}",
         F"{config['date'].strftime('%Y-%m-%d')}",
         config['site'],
-        config['flight'])
+        config['mission'])
     copy_path = create_directories(copy_path)
 
     copy_manager = CopyManager(
         os.path.join(
-            config['source_drive'],
-            'DCIM'),
+            config['source_drive']),
         copy_path)
     if not copy_manager.copy_files(lambda p, m, s: update_progress_callback(p, m, s, 'Copying files')):
         return
@@ -86,21 +85,19 @@ def copy(config: Dict[str, Any], message_queue: Queue):
         messagebox.showerror(title='An error during copy occurred.', message='One or more files failed the checksum check.')
         return
 
-    sd_card_path = os.path.join(
-        config['source_drive'],
-        F"{config['country']}_{config['region']}",
-        F"{config['date'].strftime('%Y-%m-%d')}",
-        config['site'],
-        config['flight'])
-    create_directories(sd_card_path)
-    target_dcim = os.path.join(
-        sd_card_path,
-        'DCIM')
-    shutil.move(os.path.join(
-        config['source_drive'],
-        'DCIM'
-    ), target_dcim)
-    write_metadata(config, target_dcim)
+    # sd_card_path = os.path.join(
+    #     config['source_drive'],
+    #     F"{config['country']}_{config['region']}",
+    #     F"{config['date'].strftime('%Y-%m-%d')}",
+    #     config['site'],
+    #     config['mission'])
+    # create_directories(sd_card_path)
+    # target_dcim = os.path.join(
+    #     sd_card_path)
+    # shutil.move(os.path.join(
+    #     config['source_drive']
+    # ), target_dcim)
+    # write_metadata(config, target_dcim)
 
     message_queue.put(-1)
 
